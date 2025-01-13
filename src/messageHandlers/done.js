@@ -102,7 +102,7 @@ module.exports = async function (message) {
     .setDescription(
       `Mặt hàng: **${itemName}**\n` +
         `Ticket: <#${channelId}>\n\n` +
-        `Nếu bạn cảm thấy hài lòng với dịch vụ của chúng tôi, hãy gửi 1 legit tại <#${legitChannelId}>.\n` +
+        `Để đảm bảo mọi quyền lợi bảo hành, hãy gửi 1 legit tại <#${legitChannelId}>.\n` +
         "Cám ơn bạn đã mua hàng tại FwM Store."
     )
     .setFooter({ text: formatDateTime(new Date()) });
