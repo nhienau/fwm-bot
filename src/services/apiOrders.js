@@ -9,6 +9,7 @@ async function getOrdersByDiscordUserId(id, pageNo = 1, pageSize = PAGE_SIZE) {
     })
     .like("user.discord_uid", id)
     .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
     .range((pageNo - 1) * pageSize, pageNo * pageSize - 1);
 
   if (error) {
@@ -32,6 +33,7 @@ async function getOrders(pageNo = 1, pageSize = PAGE_SIZE) {
       count: "exact",
     })
     .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
     .range((pageNo - 1) * pageSize, pageNo * pageSize - 1);
 
   if (error) {
