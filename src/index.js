@@ -15,6 +15,7 @@ const client = new Client({
 client.commands = new Collection();
 client.cooldowns = new Collection();
 client.messageHandlers = new Collection();
+client.modalHandlers = new Collection();
 const foldersPath = path.join(__dirname, "commands");
 const commandFolders = fs.readdirSync(foldersPath);
 
@@ -61,6 +62,17 @@ for (const file of messageHandlersFiles) {
   const commandName = path.basename(file, ".js");
   const handler = require(filePath);
   client.messageHandlers.set(commandName, handler);
+}
+
+const modalHandlersPath = path.join(__dirname, "modalHandlers");
+const modalHandlersFiles = fs
+  .readdirSync(modalHandlersPath)
+  .filter((file) => file.endsWith(".js"));
+for (const file of modalHandlersFiles) {
+  const filePath = path.join(modalHandlersPath, file);
+  const commandName = path.basename(file, ".js");
+  const handler = require(filePath);
+  client.modalHandlers.set(commandName, handler);
 }
 
 client.login(process.env.TOKEN);
