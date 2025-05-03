@@ -4,28 +4,19 @@ const {
   ButtonStyle,
   ActionRowBuilder,
   ComponentType,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
 } = require("discord.js");
-const { addOrder } = require("../services/apiOrders");
-const { getUserTotalAmount } = require("../services/apiUsers");
-const {
-  isValidAmount,
-  commafy,
-  formatDateTime,
-  getConfig,
-} = require("../utils/helpers");
 const {
   EMBED_COLOR,
   EMBED_COLOR_DANGER,
-  EMBED_COLOR_SUCCESS,
   INTERACTION_VALID_TIME,
   INTERACTION_INACTIVE_MSG,
   INTERACTION_NOT_ALLOWED_MSG,
   MISSING_ARGS_MSG,
   INVALID_DISCORD_UID_MSG,
-  BUYER_ROLE_ID_NOT_FOUND_MSG,
-  RICH_BUYER_ROLE_ID_NOT_FOUND_MSG,
 } = require("../utils/constant");
-const { addRole } = require("../utils/role");
 
 module.exports = async function (message) {
   // Extract neccessary message info
@@ -33,20 +24,16 @@ module.exports = async function (message) {
     author: { id: senderId },
     client,
     channelId,
-    guildId,
     content: messageContent,
   } = message;
   const channel = client.channels.cache.get(channelId);
-  const guild = client.guilds.cache.get(guildId);
 
   const embed = new EmbedBuilder().setTitle("Thêm đơn hàng mới");
 
   const instruction =
-    `Các tham số: [ID] [Số tiền] [Tên mặt hàng]\n` +
+    `Các tham số: [ID]\n` +
     `ID: ID Discord của người mua\n` +
-    `Số tiền (ví dụ: 30000 hoặc 30k)\n` +
-    `Ví dụ: \`!add 123123123123123123 80000 Nitro 1 tháng\`\n` +
-    `Ví dụ: \`!add 123123123123123123 80k YouTube Premium 1 tháng\``;
+    `Ví dụ: \`!add 123123123123123123\``;
 
   // Extract message args
   const args = messageContent
@@ -56,14 +43,14 @@ module.exports = async function (message) {
     .filter((word) => word !== "");
 
   // Validation
-  if (args.length < 3) {
+  if (args.length < 1) {
     embed
       .setColor(EMBED_COLOR_DANGER)
       .setDescription(`**${MISSING_ARGS_MSG}**\n` + instruction);
     channel.send({ embeds: [embed] });
     return;
   }
-  const [userId, amountStr, ...itemNameArr] = args;
+  const [userId] = args;
 
   // Check if user exists
   try {
@@ -78,41 +65,20 @@ module.exports = async function (message) {
     return;
   }
 
-  if (!isValidAmount(amountStr)) {
-    embed
-      .setColor(EMBED_COLOR_DANGER)
-      .setDescription(
-        `**Số tiền không hợp lệ (\`${amountStr}\`).**\n` + instruction
-      );
-    channel.send({ embeds: [embed] });
-    return;
-  }
+  embed
+    .setColor(EMBED_COLOR)
+    .addFields({ name: "Người dùng", value: `<@${userId}>` });
 
-  // Parse arguments
-  const amount = amountStr.endsWith("k")
-    ? parseInt(amountStr) * 1000
-    : parseInt(amountStr);
-
-  const itemName = itemNameArr.join(" ");
-
-  // Create confirmation embed
-  let description =
-    `Người dùng: <@${userId}>\n` +
-    `Mặt hàng: ${itemName}\n` +
-    `Số tiền: ${commafy(amount)}₫\n`;
-
-  embed.setColor(EMBED_COLOR).setDescription(description);
-
-  const btnConfirm = new ButtonBuilder()
-    .setCustomId("proceed")
-    .setLabel("Xác nhận")
+  const btnModal = new ButtonBuilder()
+    .setCustomId("continue")
+    .setLabel("Tiếp tục")
     .setStyle(ButtonStyle.Primary);
   const btnCancel = new ButtonBuilder()
     .setCustomId("cancel")
     .setLabel("Huỷ")
     .setStyle(ButtonStyle.Secondary);
 
-  const actionRow = new ActionRowBuilder().addComponents(btnConfirm, btnCancel);
+  const actionRow = new ActionRowBuilder().addComponents(btnModal, btnCancel);
 
   // Send embed and listen to action
   const response = await channel.send({
@@ -133,98 +99,63 @@ module.exports = async function (message) {
       });
       return;
     }
-    await i.deferUpdate();
-
-    btnConfirm.setDisabled(true);
-    btnCancel.setDisabled(true);
 
     if (i.customId === "cancel") {
-      description = "Yêu cầu thêm đơn hàng đã được huỷ bỏ.";
+      await i.deferUpdate();
+
+      btnModal.setDisabled(true);
+      btnCancel.setDisabled(true);
+
+      const description = "Yêu cầu thêm đơn hàng đã được huỷ bỏ.";
       embed.setDescription(description);
       await response.edit({ embeds: [embed], components: [actionRow] });
       return;
     }
 
-    // Add order, edit message
-    let id;
-    try {
-      const result = await addOrder(userId, itemName, amount);
-      description =
-        `Người dùng: <@${userId}>\n` +
-        `Mặt hàng: ${result.item_name}\n` +
-        `Số tiền: ${commafy(result.amount)}₫\n` +
-        `Thời gian: ${formatDateTime(new Date(result.created_at))}\n\n` +
-        ":white_check_mark: **Thêm đơn hàng mới thành công**";
-      embed.setColor(EMBED_COLOR_SUCCESS);
-      id = result.user_id;
-    } catch (err) {
-      description =
-        "Có lỗi xảy ra khi thêm một đơn hàng mới, vui lòng thử lại.";
-      embed.setColor(EMBED_COLOR_DANGER);
-      return;
-    } finally {
-      embed.setDescription(description);
-      await response.edit({ embeds: [embed], components: [actionRow] });
-    }
+    const modal = new ModalBuilder()
+      .setCustomId("formAdd")
+      .setTitle("Thông tin đơn hàng");
 
-    // Check if user is a guild member
-    let cachedMember, member;
-    try {
-      cachedMember = await guild.members.fetch(userId);
-      member = await cachedMember.fetch();
-    } catch (err) {
-      description +=
-        "\n" +
-        `:information_source: **<@${userId}> không phải là thành viên của server, không thêm role.**`;
-      embed.setDescription(description);
-      await response.edit({ embeds: [embed], components: [actionRow] });
-      return;
-    }
-    // Add buyer role
-    try {
-      const buyerRoleId = getConfig("buyerRoleId");
-      if (!buyerRoleId) {
-        throw new Error(BUYER_ROLE_ID_NOT_FOUND_MSG);
-      }
+    const inputItemName = new TextInputBuilder()
+      .setCustomId("itemName")
+      .setLabel("Tên mặt hàng")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
+    const inputPlatform = new TextInputBuilder()
+      .setCustomId("platform")
+      .setLabel("Tên nền tảng (ví dụ: youtube, netflix)")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(false);
+    const inputAmount = new TextInputBuilder()
+      .setCustomId("amount")
+      .setLabel("Số tiền (ví dụ: 30000, 30k)")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
+    const inputDaysOfUse = new TextInputBuilder()
+      .setCustomId("days")
+      .setLabel("Số ngày sử dụng (ví dụ: 7, 30, 60, 180, 365)")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
 
-      const added = await addRole(message.guild, member, buyerRoleId, "buyer");
-      if (added) {
-        description +=
-          "\n" + `:tada: **<@${userId}> đã trở thành <@&${buyerRoleId}>**`;
-      }
-    } catch (err) {
-      description += "\n" + `:cross_mark: **${err.message}**`;
-    } finally {
-      embed.setDescription(description);
-      await response.edit({ embeds: [embed], components: [actionRow] });
-    }
+    const actionRowItemName = new ActionRowBuilder().addComponents(
+      inputItemName
+    );
+    const actionRowPlatform = new ActionRowBuilder().addComponents(
+      inputPlatform
+    );
+    const actionRowAmount = new ActionRowBuilder().addComponents(inputAmount);
+    const actionRowDaysOfUse = new ActionRowBuilder().addComponents(
+      inputDaysOfUse
+    );
 
-    // Add rich buyer role
-    try {
-      const { total_amount: totalAmount } = await getUserTotalAmount(id);
-      if (totalAmount < 300000) return;
+    modal.addComponents(
+      actionRowItemName,
+      actionRowPlatform,
+      actionRowAmount,
+      actionRowDaysOfUse
+    );
 
-      const richBuyerRoleId = getConfig("richBuyerRoleId");
-      if (!richBuyerRoleId) {
-        throw new Error(RICH_BUYER_ROLE_ID_NOT_FOUND_MSG);
-      }
-
-      const added = await addRole(
-        message.guild,
-        member,
-        richBuyerRoleId,
-        "rich buyer"
-      );
-      if (added) {
-        description +=
-          "\n" + `:tada: **<@${userId}> đã trở thành <@&${richBuyerRoleId}>**`;
-      }
-    } catch (err) {
-      description += "\n" + `:cross_mark: **${err.message}**`;
-    } finally {
-      embed.setDescription(description);
-      await response.edit({ embeds: [embed], components: [actionRow] });
-    }
+    await i.showModal(modal);
   });
 
   collector.on("end", async () => {

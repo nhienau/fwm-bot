@@ -50,7 +50,8 @@ async function getOrders(pageNo = 1, pageSize = PAGE_SIZE) {
   };
 }
 
-async function addOrder(discordUid, itemName, amount) {
+// order: {itemName, amount, platform}
+async function addOrder(discordUid, orderData) {
   let { data, error: findIdError } = await supabase
     .from("user")
     .select("id")
@@ -76,9 +77,19 @@ async function addOrder(discordUid, itemName, amount) {
     userId = data[0].id;
   }
 
+  const { itemName, amount, platform = null, expiresAt } = orderData;
+
   const { data: order, error: addOrderError } = await supabase
     .from("order")
-    .insert([{ user_id: userId, item_name: itemName, amount }])
+    .insert([
+      {
+        user_id: userId,
+        item_name: itemName,
+        amount,
+        platform,
+        expires_at: expiresAt,
+      },
+    ])
     .select();
 
   if (addOrderError) {

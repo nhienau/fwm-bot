@@ -39,10 +39,20 @@ function isValidAmount(s) {
   return /^(?:\d+|\d+k)$/.test(s);
 }
 
+function isNumber(s) {
+  return /^\d+$/.test(s);
+}
+
 function getConfig(key) {
   const fileContent = fs.readFileSync(CONFIG_FILE_PATH);
   const config = JSON.parse(fileContent);
   return config[key];
+}
+
+function addDays(date, days) {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
 }
 
 module.exports = {
@@ -51,5 +61,7 @@ module.exports = {
   commafy,
   random,
   isValidAmount,
+  isNumber,
   getConfig,
+  addDays,
 };
