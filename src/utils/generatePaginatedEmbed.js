@@ -122,7 +122,7 @@ module.exports = async function (event, fetchFn) {
     if (i.user.id !== userId) {
       await i.reply({
         content: INTERACTION_NOT_ALLOWED_MSG,
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
       return;
     }

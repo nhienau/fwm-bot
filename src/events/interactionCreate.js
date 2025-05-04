@@ -1,4 +1,4 @@
-const { Events } = require("discord.js");
+const { Events, MessageFlags } = require("discord.js");
 const wait = require("node:timers/promises").setTimeout;
 
 module.exports = {
@@ -19,12 +19,12 @@ module.exports = {
         if (interaction.replied || interaction.deferred) {
           await interaction.followUp({
             content: "There was an error while executing this command!",
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         } else {
           await interaction.reply({
             content: "There was an error while executing this command!",
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
       }
@@ -60,7 +60,7 @@ module.exports = {
         const secondsRemaining = Math.round((expirationTime - now) / 1_000);
         await interaction.reply({
           content: `Slow down and try the command again <t:${expiredTimestamp}:R>.`,
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
         await wait((secondsRemaining - 1) * 1000);
         await interaction.deleteReply();
@@ -81,12 +81,12 @@ module.exports = {
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp({
           content: "There was an error while executing this command!",
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       } else {
         await interaction.reply({
           content: "There was an error while executing this command!",
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       }
     }

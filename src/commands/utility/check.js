@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, MessageFlags } = require("discord.js");
 const { getOrdersByPlatformAndEmail } = require("../../services/apiOrders.js");
 const generatePaginatedEmbed = require("../../utils/generatePaginatedEmbed.js");
 const { NO_ORDERS_FOUND_MSG } = require("../../utils/constant.js");
@@ -37,12 +37,12 @@ module.exports = {
     if (emailValue != null && !isValidEmail(emailValue.trim())) {
       await interaction.reply({
         content: `Email không hợp lệ (\`${emailValue}\`)`,
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
       return;
     }
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const {
       user: { id },
     } = interaction;

@@ -1,4 +1,4 @@
-const { EmbedBuilder } = require("discord.js");
+const { EmbedBuilder, MessageFlags } = require("discord.js");
 const { addOrder } = require("../services/apiOrders");
 const { getUserTotalAmount } = require("../services/apiUsers");
 const {
@@ -48,7 +48,7 @@ module.exports = async function (interaction) {
   } catch (err) {
     await interaction.reply({
       content: `${INVALID_DISCORD_UID_MSG} (${userId}).`,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -56,21 +56,21 @@ module.exports = async function (interaction) {
   if (!isValidAmount(amountValue)) {
     await interaction.reply({
       content: `Số tiền không hợp lệ (\`${amountValue}\`).`,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
-  if (!isNumber(daysValue.trim())) {
+  if (daysValue.trim().length > 0 && !isNumber(daysValue.trim())) {
     await interaction.reply({
       content: `Số ngày không hợp lệ (\`${daysValue}\`).`,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
-  if (!isValidEmail(emailValue.trim())) {
+  if (emailValue.trim().length > 0 && !isValidEmail(emailValue.trim())) {
     await interaction.reply({
       content: `Email không hợp lệ (\`${emailValue}\`).`,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -79,14 +79,14 @@ module.exports = async function (interaction) {
   const amount = amountValue.endsWith("k")
     ? parseInt(amountValue) * 1000
     : parseInt(amountValue);
-  const days = parseInt(daysValue.trim());
-  const email = emailValue.trim();
+  const days = daysValue.trim().length > 0 ? parseInt(daysValue.trim()) : 0;
+  const email = emailValue.trim() || null;
 
   const order = {
     itemName: itemNameValue.trim(),
     amount,
     ...(platformValue && { platform: platformValue.trim().toLowerCase() }),
-    expiresAt: addDays(Date.now(), days),
+    expiresAt: days > 0 ? addDays(Date.now(), days) : null,
     email,
   };
 
@@ -98,7 +98,12 @@ module.exports = async function (interaction) {
       `Người dùng: <@${userId}>\n` +
       `Mặt hàng: ${result.item_name}\n` +
       `Số tiền: ${commafy(result.amount)}₫\n` +
-      `Ngày hết hạn: ${formatDateTime(new Date(result.expires_at))}\n\n` +
+      `${
+        result.expires_at
+          ? `Ngày hết hạn: ${formatDateTime(new Date(result.expires_at))}\n`
+          : ""
+      }` +
+      "\n" +
       ":white_check_mark: **Thêm đơn hàng mới thành công**";
     embed.setColor(EMBED_COLOR_SUCCESS);
     id = result.user_id;

@@ -7,6 +7,7 @@ const {
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
+  MessageFlags,
 } = require("discord.js");
 const { getConfig } = require("../utils/helpers");
 const {
@@ -131,7 +132,7 @@ module.exports = async function (message) {
     if (i.user.id !== senderId) {
       await i.reply({
         content: INTERACTION_NOT_ALLOWED_MSG,
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
       return;
     }
