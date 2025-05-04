@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, MessageFlags } = require("discord.js");
 const { getOrdersByDiscordUserId } = require("../../services/apiOrders.js");
 const generatePaginatedEmbed = require("../../utils/generatePaginatedEmbed.js");
 const { NO_ORDERS_FOUND_MSG } = require("../../utils/constant.js");
@@ -10,7 +10,7 @@ module.exports = {
     .setName("history")
     .setDescription("Lịch sử mua hàng"),
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const {
       user: { id },

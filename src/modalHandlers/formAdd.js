@@ -1,4 +1,4 @@
-const { EmbedBuilder } = require("discord.js");
+const { EmbedBuilder, MessageFlags } = require("discord.js");
 const { addOrder } = require("../services/apiOrders");
 const { getUserTotalAmount } = require("../services/apiUsers");
 const {
@@ -48,7 +48,7 @@ module.exports = async function (interaction) {
   } catch (err) {
     await interaction.reply({
       content: `${INVALID_DISCORD_UID_MSG} (${userId}).`,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -56,21 +56,21 @@ module.exports = async function (interaction) {
   if (!isValidAmount(amountValue)) {
     await interaction.reply({
       content: `Số tiền không hợp lệ (\`${amountValue}\`).`,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
   if (daysValue.trim().length > 0 && !isNumber(daysValue.trim())) {
     await interaction.reply({
       content: `Số ngày không hợp lệ (\`${daysValue}\`).`,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
   if (emailValue.trim().length > 0 && !isValidEmail(emailValue.trim())) {
     await interaction.reply({
       content: `Email không hợp lệ (\`${emailValue}\`).`,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }

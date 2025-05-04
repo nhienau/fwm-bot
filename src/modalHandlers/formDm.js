@@ -1,4 +1,4 @@
-const { EmbedBuilder } = require("discord.js");
+const { EmbedBuilder, MessageFlags } = require("discord.js");
 const {
   EMBED_COLOR,
   INVALID_DISCORD_UID_MSG,
@@ -34,7 +34,7 @@ module.exports = async function (interaction) {
   } catch (err) {
     await interaction.reply({
       content: `${INVALID_DISCORD_UID_MSG} (${userId}).`,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -45,7 +45,7 @@ module.exports = async function (interaction) {
   ) {
     await interaction.reply({
       content: "Hãy nhập đủ tài khoản và mật khẩu (nếu có)",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -54,7 +54,7 @@ module.exports = async function (interaction) {
     await interaction.reply({
       content:
         "Không thể gửi tin nhắn kèm tài khoản vì mật khẩu có chứa kí tự gây lỗi format khi gửi tin nhắn đến người dùng ('`', '|'). Hãy bỏ trống tài khoản và mật khẩu, sau đó gửi riêng tài khoản đến người dùng sau.",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -103,7 +103,7 @@ module.exports = async function (interaction) {
         parse: ["roles"],
         roles: [],
       },
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   }
 };
