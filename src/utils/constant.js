@@ -17,6 +17,10 @@ const EMBED_COLOR_SUCCESS = 0x248045;
 const EMBED_COLOR_DANGER = 0xda373c;
 const LIST_COMMANDS = [
   {
+    name: "check",
+    description: "Kiểm tra thời hạn sử dụng",
+  },
+  {
     name: "history",
     description: "Xem lịch sử mua hàng",
   },
@@ -27,6 +31,10 @@ const LIST_COMMANDS = [
   {
     name: "qr",
     description: "Tạo QR thanh toán đơn hàng",
+  },
+  {
+    name: "top",
+    description: "Xem bảng xếp hạng",
   },
 ];
 const PAGE_SIZE = 15;
@@ -43,9 +51,12 @@ const BUYER_ROLE_ID_NOT_FOUND_MSG = "Không tìm thấy ID của role buyer";
 const RICH_BUYER_ROLE_ID_NOT_FOUND_MSG =
   "Không tìm thấy ID của role rich buyer";
 const ROLE_NOT_FOUND_MSG = "Không tìm thấy role";
-const DISCORD_SERVER_URL = "https://discord.gg/FwMStore";
+const DISCORD_SERVER_URL = "https://discord.gg/FwMStoree";
+const DISCORD_SERVER_SHORT_URL = "discord.gg/FwMStoree";
 const CONFIG_FILE_PATH = "./assets/config.json";
 const DELETE_MESSAGE_DELAY = 5000;
+const LEADERBOARD_TITLE =
+  "Top đại gia server FwM Store <a:Money_catbug:1366661978118160516>";
 
 module.exports = {
   BANK_INFO,
@@ -66,6 +77,8 @@ module.exports = {
   RICH_BUYER_ROLE_ID_NOT_FOUND_MSG,
   ROLE_NOT_FOUND_MSG,
   DISCORD_SERVER_URL,
+  DISCORD_SERVER_SHORT_URL,
   CONFIG_FILE_PATH,
   DELETE_MESSAGE_DELAY,
+  LEADERBOARD_TITLE,
 };

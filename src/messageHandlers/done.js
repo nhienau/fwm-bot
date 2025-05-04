@@ -1,14 +1,24 @@
-const { EmbedBuilder } = require("discord.js");
 const {
-  EMBED_COLOR_DANGER,
+  EmbedBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ActionRowBuilder,
+  ComponentType,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+} = require("discord.js");
+const { getConfig } = require("../utils/helpers");
+const {
   EMBED_COLOR,
-  EMBED_COLOR_SUCCESS,
+  EMBED_COLOR_DANGER,
+  INTERACTION_VALID_TIME,
+  INTERACTION_INACTIVE_MSG,
+  INTERACTION_NOT_ALLOWED_MSG,
   MISSING_ARGS_MSG,
   INVALID_DISCORD_UID_MSG,
-  DISCORD_SERVER_URL,
   DELETE_MESSAGE_DELAY,
 } = require("../utils/constant");
-const { getConfig, formatDateTime } = require("../utils/helpers");
 
 module.exports = async function (message) {
   async function sendEmbed({ embed, content, color, channel }) {
@@ -22,18 +32,22 @@ module.exports = async function (message) {
     }, DELETE_MESSAGE_DELAY);
   }
 
-  const { client, channelId, content: messageContent } = message;
+  const {
+    author: { id: senderId },
+    client,
+    channelId,
+    content: messageContent,
+  } = message;
   const channel = client.channels.cache.get(channelId);
-  const avatarUrl = client.user.displayAvatarURL();
 
   const embed = new EmbedBuilder()
     .setColor(EMBED_COLOR)
     .setTitle("Hoàn tất đơn hàng");
 
   const instruction =
-    `Tham số: [ID] [Tên mặt hàng]\n` +
+    `Tham số: [ID]\n` +
     `ID: ID Discord của người mua\n` +
-    `Ví dụ: \`!done 123123123123123123 Nitro 1 tháng\``;
+    `Ví dụ: \`!done 123123123123123123\``;
 
   const args = messageContent
     .trim()
@@ -42,7 +56,7 @@ module.exports = async function (message) {
     .filter((word) => word !== "");
 
   // Validation
-  if (args.length < 2) {
+  if (args.length < 1) {
     await sendEmbed({
       embed,
       content: `**${MISSING_ARGS_MSG}**\n` + instruction,
@@ -53,7 +67,7 @@ module.exports = async function (message) {
     return;
   }
 
-  const [userId, ...itemNameArr] = args;
+  const [userId] = args;
 
   // Check if user exists
   let user;
@@ -89,40 +103,91 @@ module.exports = async function (message) {
     return;
   }
 
-  const itemName = itemNameArr.join(" ");
+  embed
+    .setColor(EMBED_COLOR)
+    .addFields({ name: "Người dùng", value: `<@${userId}>` });
 
-  const dmEmbed = new EmbedBuilder()
-    .setColor(EMBED_COLOR_SUCCESS)
-    .setAuthor({
-      name: "FwM Store",
-      iconURL: avatarUrl,
-      url: DISCORD_SERVER_URL,
-    })
-    .setTitle("Đơn hàng tại FwM Store của bạn đã hoàn tất.")
-    .setDescription(
-      `Mặt hàng: **${itemName}**\n` +
-        `Ticket: <#${channelId}>\n\n` +
-        `Để đảm bảo mọi quyền lợi bảo hành, hãy gửi 1 legit tại <#${legitChannelId}>.\n` +
-        "Cám ơn bạn đã mua hàng tại FwM Store."
-    )
-    .setFooter({ text: formatDateTime(new Date()) });
-  try {
-    await user.send({ embeds: [dmEmbed] });
+  const btnModal = new ButtonBuilder()
+    .setCustomId("continue")
+    .setLabel("Tiếp tục")
+    .setStyle(ButtonStyle.Primary);
+  const btnCancel = new ButtonBuilder()
+    .setCustomId("cancel")
+    .setLabel("Huỷ")
+    .setStyle(ButtonStyle.Secondary);
+  const actionRow = new ActionRowBuilder().addComponents(btnModal, btnCancel);
 
-    await sendEmbed({
-      embed,
-      content: `Tin nhắn đã được gửi đến <@${userId}>.`,
-      color: EMBED_COLOR_SUCCESS,
-      channel,
-    });
-    await deleteOriginalMessage(message);
-  } catch (err) {
-    await sendEmbed({
-      embed,
-      content: `Không thể gửi tin nhắn đến <@${userId}>.`,
-      color: EMBED_COLOR_DANGER,
-      channel,
-    });
-    await deleteOriginalMessage(message);
-  }
+  const response = await channel.send({
+    embeds: [embed],
+    components: [actionRow],
+  });
+
+  const collector = response.createMessageComponentCollector({
+    componentType: ComponentType.Button,
+    time: INTERACTION_VALID_TIME,
+  });
+
+  collector.on("collect", async (i) => {
+    if (i.user.id !== senderId) {
+      await i.reply({
+        content: INTERACTION_NOT_ALLOWED_MSG,
+        ephemeral: true,
+      });
+      return;
+    }
+
+    if (i.customId === "cancel") {
+      await i.deferUpdate();
+
+      btnModal.setDisabled(true);
+      btnCancel.setDisabled(true);
+
+      description = "Yêu cầu hoàn tất đơn hàng đã được huỷ bỏ.";
+      embed.setDescription(description);
+      await response.edit({ embeds: [embed], components: [actionRow] });
+      return;
+    }
+
+    const modal = new ModalBuilder()
+      .setCustomId("formDm")
+      .setTitle("Thông tin đơn hàng");
+
+    const inputItemName = new TextInputBuilder()
+      .setCustomId("itemName")
+      .setLabel("Tên mặt hàng")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
+    const inputUsername = new TextInputBuilder()
+      .setCustomId("username")
+      .setLabel("Tài khoản")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(false);
+    const inputPassword = new TextInputBuilder()
+      .setCustomId("password")
+      .setLabel("Mật khẩu")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(false);
+
+    const actionRowItemName = new ActionRowBuilder().addComponents(
+      inputItemName
+    );
+    const actionRowUsername = new ActionRowBuilder().addComponents(
+      inputUsername
+    );
+    const actionRowPassword = new ActionRowBuilder().addComponents(
+      inputPassword
+    );
+
+    modal.addComponents(
+      actionRowItemName,
+      actionRowUsername,
+      actionRowPassword
+    );
+
+    await i.showModal(modal);
+  });
+
+  collector.on("end", async () => {
+    await response.edit(INTERACTION_INACTIVE_MSG);
+  });
 };
