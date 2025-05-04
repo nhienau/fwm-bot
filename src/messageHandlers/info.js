@@ -22,7 +22,21 @@ module.exports = async function (message) {
     .join(" ")
     .toLowerCase();
 
+  if (!itemName.length) {
+    const embed = new EmbedBuilder()
+      .setTitle("Thông tin mặt hàng")
+      .setColor(EMBED_COLOR_DANGER)
+      .setDescription("Hãy nhập tên mặt hàng (ví dụ: `!info netflix`)");
+    await channel.send({ embeds: [embed] });
+    return;
+  }
+
   const infoContent = getContentByTopic("info");
+  if (!infoContent || infoContent.length === 0) {
+    const embed = new EmbedBuilder().setDescription("Chưa có dữ liệu.");
+    await channel.send({ embeds: [embed] });
+    return;
+  }
 
   const embedContent = infoContent.find((i) => i.content.startsWith(itemName));
 
