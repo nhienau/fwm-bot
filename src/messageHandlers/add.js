@@ -136,6 +136,11 @@ module.exports = async function (message) {
       .setLabel("Số ngày sử dụng (ví dụ: 7, 30, 60, 180, 365)")
       .setStyle(TextInputStyle.Short)
       .setRequired(true);
+    const inputEmail = new TextInputBuilder()
+      .setCustomId("email")
+      .setLabel("Email")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(false);
 
     const actionRowItemName = new ActionRowBuilder().addComponents(
       inputItemName
@@ -147,12 +152,14 @@ module.exports = async function (message) {
     const actionRowDaysOfUse = new ActionRowBuilder().addComponents(
       inputDaysOfUse
     );
+    const actionRowEmail = new ActionRowBuilder().addComponents(inputEmail);
 
     modal.addComponents(
       actionRowItemName,
       actionRowPlatform,
       actionRowAmount,
-      actionRowDaysOfUse
+      actionRowDaysOfUse,
+      actionRowEmail
     );
 
     await i.showModal(modal);

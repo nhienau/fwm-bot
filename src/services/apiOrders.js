@@ -26,6 +26,44 @@ async function getOrdersByDiscordUserId(id, pageNo = 1, pageSize = PAGE_SIZE) {
   };
 }
 
+// options: {id: discord user id, platform: platform name, (email)}
+async function getOrdersByPlatformAndEmail(
+  options,
+  pageNo = 1,
+  pageSize = PAGE_SIZE
+) {
+  const { id, platform, email } = options;
+  let query = supabase
+    .from("order")
+    .select("item_name,amount,created_at,expires_at,email,user!inner()", {
+      count: "exact",
+    })
+    .like("user.discord_uid", id)
+    .like("platform", platform);
+
+  if (email) {
+    query = query.like("email", email);
+  }
+
+  let { data, error, count } = await query
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .range((pageNo - 1) * pageSize, pageNo * pageSize - 1);
+
+  if (error) {
+    console.error(error);
+    throw new Error(error);
+  }
+
+  return {
+    data,
+    pageNo,
+    pageSize,
+    totalElements: count,
+    totalPages: Math.ceil(count / pageSize),
+  };
+}
+
 async function getOrders(pageNo = 1, pageSize = PAGE_SIZE) {
   let { data, error, count } = await supabase
     .from("order")
@@ -50,7 +88,7 @@ async function getOrders(pageNo = 1, pageSize = PAGE_SIZE) {
   };
 }
 
-// order: {itemName, amount, platform}
+// order: {itemName, amount, platform, email}
 async function addOrder(discordUid, orderData) {
   let { data, error: findIdError } = await supabase
     .from("user")
@@ -77,7 +115,13 @@ async function addOrder(discordUid, orderData) {
     userId = data[0].id;
   }
 
-  const { itemName, amount, platform = null, expiresAt } = orderData;
+  const {
+    itemName,
+    amount,
+    platform = null,
+    expiresAt,
+    email = null,
+  } = orderData;
 
   const { data: order, error: addOrderError } = await supabase
     .from("order")
@@ -88,6 +132,7 @@ async function addOrder(discordUid, orderData) {
         amount,
         platform,
         expires_at: expiresAt,
+        email,
       },
     ])
     .select();
@@ -118,6 +163,7 @@ async function deleteOrder(id) {
 
 module.exports = {
   getOrdersByDiscordUserId,
+  getOrdersByPlatformAndEmail,
   getOrders,
   addOrder,
   deleteOrder,

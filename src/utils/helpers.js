@@ -43,6 +43,10 @@ function isNumber(s) {
   return /^\d+$/.test(s);
 }
 
+function isValidEmail(s) {
+  return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(s);
+}
+
 function getConfig(key) {
   const fileContent = fs.readFileSync(CONFIG_FILE_PATH);
   const config = JSON.parse(fileContent);
@@ -62,6 +66,7 @@ module.exports = {
   random,
   isValidAmount,
   isNumber,
+  isValidEmail,
   getConfig,
   addDays,
 };

@@ -16,6 +16,7 @@ const {
   isNumber,
   addDays,
   commafy,
+  isValidEmail,
 } = require("../utils/helpers");
 const { addRole } = require("../utils/role");
 
@@ -38,6 +39,7 @@ module.exports = async function (interaction) {
   const platformValue = interaction.fields.getTextInputValue("platform");
   const amountValue = interaction.fields.getTextInputValue("amount");
   const daysValue = interaction.fields.getTextInputValue("days");
+  const emailValue = interaction.fields.getTextInputValue("email");
 
   // Check if user exists
   let user;
@@ -65,18 +67,27 @@ module.exports = async function (interaction) {
     });
     return;
   }
+  if (!isValidEmail(emailValue.trim())) {
+    await interaction.reply({
+      content: `Email không hợp lệ (\`${emailValue}\`).`,
+      ephemeral: true,
+    });
+    return;
+  }
 
   // Parse arguments
   const amount = amountValue.endsWith("k")
     ? parseInt(amountValue) * 1000
     : parseInt(amountValue);
   const days = parseInt(daysValue.trim());
+  const email = emailValue.trim();
 
   const order = {
     itemName: itemNameValue.trim(),
     amount,
     ...(platformValue && { platform: platformValue.trim().toLowerCase() }),
     expiresAt: addDays(Date.now(), days),
+    email,
   };
 
   // Add order, edit message

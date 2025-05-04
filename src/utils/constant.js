@@ -17,6 +17,10 @@ const EMBED_COLOR_SUCCESS = 0x248045;
 const EMBED_COLOR_DANGER = 0xda373c;
 const LIST_COMMANDS = [
   {
+    name: "check",
+    description: "Kiểm tra thời hạn sử dụng",
+  },
+  {
     name: "history",
     description: "Xem lịch sử mua hàng",
   },
