@@ -119,7 +119,7 @@ async function addOrder(discordUid, orderData) {
     itemName,
     amount,
     platform = null,
-    expiresAt,
+    expiresAt = null,
     email = null,
   } = orderData;
 

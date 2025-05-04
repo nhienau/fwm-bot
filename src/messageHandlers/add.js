@@ -135,7 +135,7 @@ module.exports = async function (message) {
       .setCustomId("days")
       .setLabel("Số ngày sử dụng (ví dụ: 7, 30, 60, 180, 365)")
       .setStyle(TextInputStyle.Short)
-      .setRequired(true);
+      .setRequired(false);
     const inputEmail = new TextInputBuilder()
       .setCustomId("email")
       .setLabel("Email")
