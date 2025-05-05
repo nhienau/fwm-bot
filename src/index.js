@@ -16,6 +16,7 @@ client.commands = new Collection();
 client.cooldowns = new Collection();
 client.messageHandlers = new Collection();
 client.modalHandlers = new Collection();
+client.reminders = [];
 const foldersPath = path.join(__dirname, "commands");
 const commandFolders = fs.readdirSync(foldersPath);
 
