@@ -1,5 +1,6 @@
 const { PAGE_SIZE } = require("../utils/constant");
 const { supabase } = require("./supabase");
+const { addDays } = require("../utils/helpers");
 
 async function getOrdersByDiscordUserId(id, pageNo = 1, pageSize = PAGE_SIZE) {
   let { data, error, count } = await supabase
@@ -88,6 +89,49 @@ async function getOrders(pageNo = 1, pageSize = PAGE_SIZE) {
   };
 }
 
+// Get nearly expired orders,
+// but hasn't reminded for renewal yet
+async function getNearlyExpiredOrders() {
+  const now = new Date();
+  now.setUTCHours(0, 0, 0, 0);
+
+  const fromDate = addDays(now, 1);
+  fromDate.setUTCHours(0, 0, 0, 0);
+  const toDate = addDays(fromDate, 1);
+
+  let { data, error } = await supabase
+    .from("order")
+    .select("id,expires_at")
+    .gte("expires_at", fromDate.toISOString())
+    .lte("expires_at", toDate.toISOString())
+    .eq("renewal_reminded", false)
+    .order("expires_at", { ascending: true })
+    .order("id", { ascending: true });
+
+  if (error) {
+    console.error(error);
+    throw new Error(error);
+  }
+
+  return data;
+}
+
+async function getOrderById(id) {
+  let { data, error } = await supabase
+    .from("order")
+    .select(
+      "id,item_name,amount,created_at,expires_at,email,user!inner(discord_uid)"
+    )
+    .eq("id", id);
+
+  if (error) {
+    console.error(error);
+    throw new Error(error);
+  }
+
+  return data[0];
+}
+
 // order: {itemName, amount, platform, email}
 async function addOrder(discordUid, orderData) {
   let { data, error: findIdError } = await supabase
@@ -133,6 +177,7 @@ async function addOrder(discordUid, orderData) {
         platform,
         expires_at: expiresAt,
         email,
+        renewal_reminded: expiresAt ? false : null,
       },
     ])
     .select();
@@ -143,6 +188,22 @@ async function addOrder(discordUid, orderData) {
   }
 
   return order[0];
+}
+
+// orderData: object
+async function updateOrder(id, orderData) {
+  const { data, error } = await supabase
+    .from("order")
+    .update(orderData)
+    .eq("id", id)
+    .select();
+
+  if (error) {
+    console.error(error);
+    throw new Error(error);
+  }
+
+  return data[0];
 }
 
 async function deleteOrder(id) {
@@ -164,7 +225,10 @@ async function deleteOrder(id) {
 module.exports = {
   getOrdersByDiscordUserId,
   getOrdersByPlatformAndEmail,
+  getNearlyExpiredOrders,
   getOrders,
+  getOrderById,
   addOrder,
   deleteOrder,
+  updateOrder,
 };

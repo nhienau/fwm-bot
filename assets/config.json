@@ -1,5 +1,7 @@
 {
   "buyerRoleId": "",
   "richBuyerRoleId": "",
-  "legitChannelId": ""
+  "legitChannelId": "",
+  "reminderLogChannelId": "",
+  "ticketChannelId": ""
 }
