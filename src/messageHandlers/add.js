@@ -167,6 +167,11 @@ module.exports = async function (message) {
   });
 
   collector.on("end", async () => {
-    await response.edit(INTERACTION_INACTIVE_MSG);
+    try {
+      await response.edit(INTERACTION_INACTIVE_MSG);
+    } catch (err) {
+      if (err.code === 10008) return;
+      console.error(err);
+    }
   });
 };

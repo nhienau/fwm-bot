@@ -11,24 +11,29 @@ const { EMBED_COLOR_DANGER } = require("./constant");
 // from nearly expired orders, create cronjobs to send renewal DMs
 async function scheduleRenewalReminders(client) {
   const orders = await getNearlyExpiredOrders();
+  const now = new Date();
+
   const reminders = orders.map((o) => {
     const expiresAt = new Date(o.expires_at);
     const sendDmAt = addDays(expiresAt, -1);
+    const isSendDmTimestampInPast = Number(now) > Number(sendDmAt);
 
     return {
       ...o,
       sendDmAt,
       cronJob: cron.CronJob.from({
-        cronTime: sendDmAt,
+        // When isSendDmTimestampInPast = true, there is no need to set cronTime as cronjob will be fired immediately (runOnInit: true)
+        // Set it to expiresAt just to prevent "Date in past" warning
+        cronTime: isSendDmTimestampInPast ? expiresAt : sendDmAt,
         onTick: sendRenewalReminder.bind(null, { client, orderId: o.id }),
         start: true,
+        ...(isSendDmTimestampInPast && { runOnInit: true }),
       }),
     };
   });
 
   client.reminders = reminders;
 
-  const now = new Date();
   const tomorrow = addDays(now, 1);
 
   const reminderLogChannelId = getConfig("reminderLogChannelId");
