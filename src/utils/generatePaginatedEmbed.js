@@ -170,10 +170,15 @@ module.exports = async function (event, fetchFn) {
   });
 
   collector.on("end", async () => {
-    if (isInteraction) {
-      await event.editReply(INTERACTION_INACTIVE_MSG);
-    } else {
-      await response.edit(INTERACTION_INACTIVE_MSG);
+    try {
+      if (isInteraction) {
+        await event.editReply(INTERACTION_INACTIVE_MSG);
+      } else {
+        await response.edit(INTERACTION_INACTIVE_MSG);
+      }
+    } catch (err) {
+      if (err.code === 10008) return;
+      console.error(err);
     }
   });
 };
