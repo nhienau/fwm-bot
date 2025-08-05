@@ -1,4 +1,6 @@
+const fs = require("node:fs");
 const { Events, MessageFlags } = require("discord.js");
+const { formatDateTime } = require("../utils/helpers");
 const wait = require("node:timers/promises").setTimeout;
 
 module.exports = {
@@ -15,7 +17,17 @@ module.exports = {
       try {
         await handler(interaction);
       } catch (error) {
+        const errorTime = Date.now();
+        const { channelId, user } = interaction;
+        const logMessage = `${formatDateTime(
+          errorTime
+        )} [modal ID: ${modalId}, channel: ${channelId}, user: ${user.id}] ${
+          error.message
+        }\n`;
+        console.log(logMessage);
         console.error(error);
+        fs.appendFileSync("./assets/error.log", logMessage);
+
         if (interaction.replied || interaction.deferred) {
           await interaction.followUp({
             content: "There was an error while executing this command!",
@@ -48,9 +60,8 @@ module.exports = {
 
     const now = Date.now();
     const defaultCooldownDuration = 5;
-    const extraCooldown = userId === process.env.HUY_KHANH_ID ? 5 : 0;
     const cooldownAmount =
-      ((command.cooldown ?? defaultCooldownDuration) + extraCooldown) * 1_000;
+      (command.cooldown ?? defaultCooldownDuration) * 1_000;
 
     if (cooldowns.has(userId)) {
       const { timestamp, cooldownDuration } = cooldowns.get(userId);
@@ -77,7 +88,15 @@ module.exports = {
     try {
       await command.execute(interaction);
     } catch (error) {
+      const errorTime = Date.now();
       console.error(error);
+      const { user, commandName, channelId } = interaction;
+      const logMessage = `${formatDateTime(
+        errorTime
+      )} [command: ${commandName}, channel: ${channelId}, user: ${user.id}] ${
+        error.message
+      }\n`;
+      fs.appendFileSync("./assets/error.log", logMessage);
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp({
           content: "There was an error while executing this command!",
